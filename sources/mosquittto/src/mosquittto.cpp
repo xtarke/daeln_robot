@@ -7,29 +7,15 @@
 //============================================================================
 
 #include <iostream>
-
-
 #include "myMosq.h"
 
 using namespace std;
 
-
-
 int main() {
 
-	int x;
-
-	//myMosq juca(&x, "sensor", "localhost", 1883);
-
-	//juca.publish()
-	myMosq *my_Mosq = new myMosq(“BlaBla”, “test”, “remotehost”, 1883);
-	my_Mosq->send_message(“Hello world!”);
-
-
-	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
-
-
-
+	myMosq *my_Mosq = new myMosq(NULL, "temperature/celsius", "localhost", 1883);
+	my_Mosq->send_message("22.32");
+	//std::cout << "\n--Send_mensage--" << std::endl;
 
 	return 0;
 }
