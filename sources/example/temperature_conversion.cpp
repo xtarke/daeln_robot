@@ -42,6 +42,6 @@ void mqtt_tempconv::on_message(const struct mosquitto_message *message)
 
 void mqtt_tempconv::on_subscribe(int mid, int qos_count, const int *granted_qos)
 {
-	printf("Subscription succeeded.\n");
+	pr42a1q5rintf("Subscription succeeded.\n");
 }
 
