@@ -1,0 +1,32 @@
+# depslib dependency file v1.0
+1506525935 source:/home/gpdse/Diesson/MQTT/main.cpp
+	<iostream>
+	<string.h>
+	"myMosq.h"
+
+1506525732 /home/gpdse/Diesson/MQTT/myMosq.h
+	<mosquittopp.h>
+
+1506525722 source:/home/gpdse/Diesson/MQTT/myMosq.cpp
+	"myMosq.h"
+	<iostream>
+	<string.h>
+	<stdio.h>
+
+1507225504 source:/home/gpdse/Diesson/MQTT_TR/main.cpp
+	<iostream>
+	<unistd.h>
+	<string.h>
+	<time.h>
+	"myMosq.h"
+
+1506703776 /home/gpdse/Diesson/MQTT_TR/myMosq.h
+	<mosquittopp.h>
+
+1507225481 source:/home/gpdse/Diesson/MQTT_TR/myMosq.cpp
+	"myMosq.h"
+	<iostream>
+	<string.h>
+	<stdio.h>
+	<time.h>
+
