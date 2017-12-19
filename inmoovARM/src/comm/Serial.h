@@ -65,16 +65,19 @@ public:
 
 	enum COMM_INTERFACE { USBCOM = 1, UARTCOM = 2 };
 
-	enum PKG_DEF {PKG_START = 0x7E, PKG_MAX_SIZE = 8, PKG_HEADER_SIZE = 2};
+	enum PKG_DEF {PKG_START = 0x7E, PKG_MAX_SIZE = 24, PKG_HEADER_SIZE = 2};
 
 	enum PGK_INDEX { PKG_CMD_IDX = 0 };
-	enum PKG_TYPE {PWM_DATA = 0x01, ADC_DATA = 0x11};
+	enum PKG_TYPE {PWM_DATA = 0x01, ADC_DATA = 0x11, ADC_ALL_DATA = 0x13};
 
 	enum PWM_PKG_DEF {SERVO_ID_IDX = 1,
 		SERVO_DATA_IDX = 2, SERVO_PAYLOAD_SIZE = 3, SERVO_ACK_CMD = 0x80};
 
-	void getPaylod(uint8_t *data, uint8_t size, uint8_t interface);
+	enum ADC_SINGLE_PKG_DEF {ADC_ID_IDX = 1,
+		ADC_DATA_IDX = 2, ADC_PAYLOAD_SIZE = 4, ADC_ACK_CMD = 0x90};
 
+
+	void getPaylod(uint8_t *data, uint8_t size, uint8_t interface);
 	void makeAndSend(uint8_t *data, uint8_t size, uint8_t interface);
 
 };

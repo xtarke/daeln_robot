@@ -57,11 +57,11 @@ int main(int argc, char* argv[])
 	uint8_t responseData[Serial::PKG_MAX_SIZE];
 
 	// Send a greeting to the trace device (skipped on Release).
-	trace_puts("Hello ARM World!");
+	// trace_puts("Hello ARM World!");
 
 	// At this stage the system clock should have already been configured
 	// at high speed.
-	trace_printf("System clock: %u Hz\n", SystemCoreClock);
+	// trace_printf("System clock: %u Hz\n", SystemCoreClock);
 
 	Timer timer;
 	timer.start();
@@ -92,6 +92,10 @@ int main(int argc, char* argv[])
 			uint8_t pkg_type = serialComm.get_data(Serial::PKG_CMD_IDX, comInterface);
 			uint8_t servo_id;
 			uint8_t servo_position;
+			uint16_t servo_current;
+
+			serialComm.getPaylod(responseData + Serial::PKG_HEADER_SIZE,
+													Serial::SERVO_PAYLOAD_SIZE, comInterface);
 
 			switch (pkg_type){
 				case Serial::PWM_DATA:
@@ -111,6 +115,22 @@ int main(int argc, char* argv[])
 					break;
 
 				case Serial::ADC_DATA:
+					/* Copy all data without Checksum and header to make response pkg */
+					serialComm.getPaylod(responseData + Serial::PKG_HEADER_SIZE,
+										Serial::SERVO_PAYLOAD_SIZE, comInterface);
+					/* Get data */
+					servo_id = responseData[Serial::PKG_HEADER_SIZE + Serial::ADC_ID_IDX];
+					servo_current = motors.getCurrent(servo_id);
+
+					/* Send response data */
+					responseData[Serial::PKG_HEADER_SIZE + Serial::PKG_CMD_IDX] = Serial::ADC_ACK_CMD;
+					/* Send current high and low data */
+					responseData[Serial::PKG_HEADER_SIZE + Serial::PKG_CMD_IDX + Serial::ADC_DATA_IDX] = (servo_current >> 8);
+					responseData[Serial::PKG_HEADER_SIZE + Serial::PKG_CMD_IDX + Serial::ADC_DATA_IDX + 1] = servo_current & 0xff;
+
+					serialComm.makeAndSend(responseData, Serial::ADC_PAYLOAD_SIZE, comInterface);
+
+
 
 					break;
 

@@ -43,7 +43,7 @@ Leitura de corrente para todos os servos:
 | PKG_START | PKG_SIZE | < PKG_CMD > |  CHECKSUM  |
 | :-------: | :------: | :---------: |  :-------: |  
 |  0x7e     |   0x01   |   0x13      |  0xff-data | 
-| :-------: | :------: | :---------: |  :-------: |  
+
 
 Resposta:
 
