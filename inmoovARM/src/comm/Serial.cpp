@@ -7,6 +7,7 @@
 
 #include <string.h>
 #include "Serial.h"
+#include "../peripheral/Timer.h"
 
 extern "C" {
 	//#include "./usb/hw_config.h"
@@ -145,9 +146,7 @@ void Serial::check_package(){
 
 void Serial::checkUSBpackage(){
 
-
 	volatile uint8_t data;
-	//  uint8_t i;
 
 	while(!USBQueue.isEmpty()){
 
@@ -209,9 +208,8 @@ void Serial::checkUSBpackage(){
 
 void Serial::checkUARTpackage(){
 
-
 	volatile uint8_t data;
-	//  uint8_t i;
+	Timer::ticks_t currentTick = 0;
 
 	while(!UARTQueue.isEmpty()){
 

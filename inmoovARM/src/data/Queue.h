@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 
-#define QUEUE_BUFFER_SIZE 50
+#define QUEUE_BUFFER_SIZE 64
 
 #ifdef __cplusplus // only actually define the class if this is C++
 

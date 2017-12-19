@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>RemoteControlWindow</class>
+ <widget class="QDialog" name="RemoteControlWindow">
+  <property name="windowModality">
+   <enum>Qt::NonModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>296</width>
+    <height>507</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Remote</string>
+  </property>
+  <property name="modal">
+   <bool>false</bool>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Servo:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="comboBoxServoList"/>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <item>
+        <widget class="QToolButton" name="toolButtonDecrease">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>-</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="toolButtonIncrease">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>+</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <widget class="QDial" name="dial">
+       <property name="maximum">
+        <number>100</number>
+       </property>
+       <property name="singleStep">
+        <number>2</number>
+       </property>
+       <property name="value">
+        <number>50</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPlainTextEdit" name="plainTextEdit"/>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QLCDNumber" name="lcdNumberA3"/>
+       </item>
+       <item>
+        <widget class="QLCDNumber" name="lcdNumberA2"/>
+       </item>
+       <item>
+        <widget class="QLCDNumber" name="lcdNumberA1"/>
+       </item>
+       <item>
+        <widget class="QLCDNumber" name="lcdNumberA0">
+         <property name="smallDecimalPoint">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <item>
+        <widget class="QToolButton" name="toolButtonPort">
+         <property name="text">
+          <string>Port</string>
+         </property>
+         <property name="checkable">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="toolButtonOpen">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="text">
+          <string>Open</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="toolButtonClose">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Close</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="toolButtonCurr">
+         <property name="text">
+          <string>Srv I</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QPushButton" name="pushButtonYes">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="text">
+      <string>Yes</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <property name="flat">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="pushButtonNo">
+     <property name="text">
+      <string>No</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="pushButtonLed">
+     <property name="text">
+      <string>Led</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="pushButtonArmLeft">
+     <property name="text">
+      <string>ArmLeft</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="pushButtonArmRight">
+     <property name="text">
+      <string>ArmRight</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_4"/>
+   </item>
+  </layout>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections/>
+</ui>

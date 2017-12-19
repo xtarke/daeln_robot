@@ -94,9 +94,6 @@ int main(int argc, char* argv[])
 			uint8_t servo_position;
 			uint16_t servo_current;
 
-			serialComm.getPaylod(responseData + Serial::PKG_HEADER_SIZE,
-													Serial::SERVO_PAYLOAD_SIZE, comInterface);
-
 			switch (pkg_type){
 				case Serial::PWM_DATA:
 					/* Copy all data ignoring Checksum and header to make response pkg */
