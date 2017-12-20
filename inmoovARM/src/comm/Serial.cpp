@@ -42,6 +42,78 @@ Serial::~Serial() {
 
 }
 
+
+void Serial::Talk(ServoMotor &motors){
+
+	uint8_t responseData[PKG_MAX_SIZE];
+	uint8_t comInterface = isPackgageReady();
+
+	if (comInterface == 0){
+		check_package();
+	}
+	else
+	{
+		uint8_t pkg_type = get_data(Serial::PKG_CMD_IDX, comInterface);
+		uint8_t servo_id;
+		uint8_t servo_position;
+		uint16_t servo_current;
+
+		switch (pkg_type){
+			case Serial::PWM_DATA:
+				/* Copy all data ignoring Checksum and header to make response pkg */
+				getPaylod(responseData + Serial::PKG_HEADER_SIZE,
+									Serial::SERVO_PAYLOAD_SIZE, comInterface);
+
+				/* Get data */
+				servo_id = responseData[Serial::SERVO_ID_IDX + Serial::PKG_HEADER_SIZE];
+				servo_position = responseData[Serial::SERVO_DATA_IDX + Serial::PKG_HEADER_SIZE];
+				motors.set_position(servo_id, servo_position);
+
+				/* Send response data */
+				responseData[Serial::PKG_CMD_IDX + Serial::PKG_HEADER_SIZE] = Serial::SERVO_ACK_CMD;
+				makeAndSend(responseData, Serial::SERVO_PAYLOAD_SIZE, comInterface);
+
+				break;
+
+			case Serial::ADC_DATA:
+				/* Copy all data without Checksum and header to make response pkg */
+				getPaylod(responseData + Serial::PKG_HEADER_SIZE,
+									Serial::SERVO_PAYLOAD_SIZE, comInterface);
+				/* Get data */
+				servo_id = responseData[Serial::PKG_HEADER_SIZE + Serial::ADC_ID_IDX];
+				servo_current = motors.getCurrent(servo_id);
+
+				/* Send response data */
+				responseData[Serial::PKG_HEADER_SIZE + Serial::PKG_CMD_IDX] = Serial::ADC_ACK_CMD;
+				/* Send current high and low data */
+				responseData[Serial::PKG_HEADER_SIZE + Serial::PKG_CMD_IDX + Serial::ADC_DATA_IDX] = (servo_current >> 8);
+				responseData[Serial::PKG_HEADER_SIZE + Serial::PKG_CMD_IDX + Serial::ADC_DATA_IDX + 1] = servo_current & 0xff;
+
+				makeAndSend(responseData, Serial::ADC_PAYLOAD_SIZE, comInterface);
+				break;
+
+			case Serial::ADC_ALL_DATA:
+				/* Send response data */
+				responseData[Serial::PKG_HEADER_SIZE + Serial::PKG_CMD_IDX] = Serial::ADC_ACK_CMD;
+
+				for (uint8_t i=0; i < ServoMotor::N_MOTORS*2; i+=2){
+					servo_current = motors.getCurrent(i / 2);
+					/* Send current high and low data */
+					responseData[Serial::PKG_HEADER_SIZE + Serial::ADC_ALL_DATA_IDX + i] = (servo_current >> 8);
+					responseData[Serial::PKG_HEADER_SIZE + Serial::ADC_ALL_DATA_IDX + i + 1] = servo_current & 0xff;
+				}
+
+				makeAndSend(responseData, Serial::ADC_ALL_PAYLOAD_SIZE, comInterface);
+				break;
+
+			default:
+				break;
+
+		}
+		consume(comInterface);
+	}
+}
+
 uint8_t Serial::get_data(uint8_t i, uint8_t interface){
 
 	uint8_t _i = i;// & (DATA_MAX_SIZE - 1);

@@ -21,6 +21,8 @@ private:
 	CurrentProtection motorProtection;
 
 public:
+	enum {N_MOTORS = Pwm::N_PWMS};
+
 	/* Protection current in mA */
 	ServoMotor(uint16_t _overloadMaxCurrent, uint16_t _overshootMaxCurrent);
 	virtual ~ServoMotor();

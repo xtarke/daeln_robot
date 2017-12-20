@@ -8,6 +8,7 @@
 #ifndef COMM_SERIAL_H_
 #define COMM_SERIAL_H_
 
+#include "../robot/ServoMotor.h"
 #include "../peripheral/Usart.h"
 #include "../data/Queue.h"
 
@@ -74,11 +75,13 @@ public:
 		SERVO_DATA_IDX = 2, SERVO_PAYLOAD_SIZE = 3, SERVO_ACK_CMD = 0x80};
 
 	enum ADC_SINGLE_PKG_DEF {ADC_ID_IDX = 1,
-		ADC_DATA_IDX = 2, ADC_PAYLOAD_SIZE = 4, ADC_ACK_CMD = 0x90};
+		ADC_DATA_IDX = 2, ADC_PAYLOAD_SIZE = 4, ADC_ALL_DATA_IDX = 1, ADC_ALL_PAYLOAD_SIZE = 15, ADC_ACK_CMD = 0x90};
 
 
 	void getPaylod(uint8_t *data, uint8_t size, uint8_t interface);
 	void makeAndSend(uint8_t *data, uint8_t size, uint8_t interface);
+
+	void Talk(ServoMotor &motors);
 
 };
 

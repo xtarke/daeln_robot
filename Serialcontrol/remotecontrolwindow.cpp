@@ -26,28 +26,8 @@ RemoteControlWindow::RemoteControlWindow(QWidget *parent) :
     
     currentUpdateTimer = new QTimer(this);
 
-//    timer_yes = new QTimer(this);
-//    timer_no = new QTimer(this);
-//    timer_leftArm = new QTimer(this);
-//    timer_rigtArm = new QTimer(this);
-        
-//    sensors_thread = new SensorTread(*comm);
-        
-//    connect(ui->dial, SIGNAL(valueChanged(int)), this, SLOT (on_dialChanged()));
-
-      connect(currentUpdateTimer, SIGNAL(timeout()), this, SLOT(update_servo_current()));
-
-//    connect(sensors_thread, SIGNAL(ReadMe_A0(double)), ui->lcdNumberA0, SLOT(display(double)));
-//    connect(sensors_thread, SIGNAL(ReadMe_A1(double)), ui->lcdNumberA1, SLOT(display(double)));
-//    connect(sensors_thread, SIGNAL(ReadMe_A2(double)), ui->lcdNumberA2, SLOT(display(double)));
-//    connect(sensors_thread, SIGNAL(ReadMe_A3(double)), ui->lcdNumberA3, SLOT(display(double)));
-    
-//    connect(timer_no, SIGNAL(timeout()), this, SLOT(onTimerNoTimeout()));
-//    connect(timer_yes, SIGNAL(timeout()), this, SLOT(onTimerYesTimeout()));
-
-//    connect(timer_leftArm, SIGNAL(timeout()), this, SLOT(onTimerLeftArmTimeout()));
-//    connect(timer_rigtArm, SIGNAL(timeout()), this, SLOT(onTimerRightArmTimeout()));
-
+    connect(ui->dial, SIGNAL(valueChanged(int)), this, SLOT (on_dialChanged()));
+    connect(currentUpdateTimer, SIGNAL(timeout()), this, SLOT(update_servo_current()));
 
     fillServoParameters();
 }
@@ -108,7 +88,7 @@ void RemoteControlWindow::on_toolButtonCurr_clicked(){
         on = false;
     }
     else {
-        currentUpdateTimer->setInterval(100);
+        currentUpdateTimer->setInterval(500);
         currentUpdateTimer->start();
         on = true;
     }
@@ -117,98 +97,84 @@ void RemoteControlWindow::on_toolButtonCurr_clicked(){
 
 
 void RemoteControlWindow::on_toolButtonIncrease_clicked(){
-//    QByteArray data;
+    QByteArray data;
+     
+    int currentIndex = ui->comboBoxServoList->currentIndex();
+    int ServoId = ui->comboBoxServoList->itemData(currentIndex).toInt();
     
-//    Head head(*comm);
+    if (!comm->isReady()){
+        error_message->showMessage("Serial port is not open!");
+        return;
+    }
     
-//    int currentIndex = ui->comboBoxServoList->currentIndex();
-//    int ServoId = ui->comboBoxServoList->itemData(currentIndex).toInt();
-    
-//    if (!comm->isReady()){
-//        error_message->showMessage("Serial port is not open!");
-//        return;
-//    }
-    
-//    ServoPos[ServoId]+=10;
+    ServoPos[ServoId]+=10;
 
-//    if (ServoPos[ServoId] > 100){
-//        ServoPos[ServoId] = 100;
-//        return;
-//    }
+    if (ServoPos[ServoId] > 100){
+        ServoPos[ServoId] = 100;
+        return;
+    }
     
-//    if (ServoId == 1)
-//        head.move_h(ServoPos[ServoId]);
-//    else
-//        head.move_v(ServoPos[ServoId]);
-    
-    
-//    //ui->dial->setValue(int(ServoPos[ServoId]));
+    ui->dial->setValue(int(ServoPos[ServoId]));
 }
 
 void RemoteControlWindow::on_toolButtonDecrease_clicked(){  
         
-//    QByteArray data;
-//    Head head(*comm);
+    QByteArray data;
 
-//    int currentIndex = ui->comboBoxServoList->currentIndex();
-//    int ServoId = ui->comboBoxServoList->itemData(currentIndex).toInt();
+    int currentIndex = ui->comboBoxServoList->currentIndex();
+    int ServoId = ui->comboBoxServoList->itemData(currentIndex).toInt();
     
-//    if (!comm->isReady()){
-//        error_message->showMessage("Serial port is not open!");
-//        return;
-//    }
+    if (!comm->isReady()){
+        error_message->showMessage("Serial port is not open!");
+        return;
+    }
     
-//    ServoPos[ServoId]-=10;
+    ServoPos[ServoId]-=10;
 
-//    if (ServoPos[ServoId] > 100){
-//        ServoPos[ServoId] = 100;
-//        return;
-//    }
+    if (ServoPos[ServoId] > 100){
+        ServoPos[ServoId] = 100;
+        return;
+    }
     
-//    if (ServoId == 1)
-//       head.move_h(ServoPos[ServoId]);
-//    else
-//       head.move_v(ServoPos[ServoId]);
-    
-//    //ui->dial->setValue(int(ServoPos[ServoId]));
+    ui->dial->setValue(int(ServoPos[ServoId]));
 }
 
 void RemoteControlWindow::fillServoParameters()
 {
-    ui->comboBoxServoList->addItem(QStringLiteral("Servo 0 (V)"), 0x00);
-    ui->comboBoxServoList->addItem(QStringLiteral("Servo 1 (H)"), 0x01);
+    ui->comboBoxServoList->addItem(QStringLiteral("Servo 0"), 0x00);
+    ui->comboBoxServoList->addItem(QStringLiteral("Servo 1"), 0x01);
     ui->comboBoxServoList->addItem(QStringLiteral("Servo 2"), 0x02);
     ui->comboBoxServoList->addItem(QStringLiteral("Servo 3"), 0x03);
-    
+    ui->comboBoxServoList->addItem(QStringLiteral("Servo 4"), 0x04);
+    ui->comboBoxServoList->addItem(QStringLiteral("Servo 5"), 0x05);
+    ui->comboBoxServoList->addItem(QStringLiteral("Servo 6"), 0x06);
 }
 
 
 void RemoteControlWindow::on_dialChanged(){
     
-//    QByteArray data;
-//    QByteArray package;
-//    Head head(*comm);
+    QByteArray data;
+    QByteArray package;
+
+    int currentIndex = ui->comboBoxServoList->currentIndex();
+    int ServoId = ui->comboBoxServoList->itemData(currentIndex).toInt();
         
-//    int currentIndex = ui->comboBoxServoList->currentIndex();
-//    int ServoId = ui->comboBoxServoList->itemData(currentIndex).toInt();
-        
-//    if (!comm->isReady()){
-//        error_message->showMessage("Serial port is not open!");
-//        return;
-//    }
+    if (!comm->isReady()){
+        error_message->showMessage("Serial port is not open!");
+        return;
+    }
     
-//    ServoPos[ServoId] = (uint8_t)ui->dial->value();
+    ServoPos[ServoId] = (uint8_t)ui->dial->value();
     
-//    /* Package head data */
-//    data += 0x01;
-//    data += (uint8_t)ServoId;
-//    data += ServoPos[ServoId];
+    /* Package head data */
+    data += 0x01;
+    data += (uint8_t)ServoId;
+    data += ServoPos[ServoId];
     
-//    package = comm->make_pgk(data);
+    package = comm->make_pgk(data);
             
-//    /* Send data */
-//    comm->send_data(package, 6);
-            
+    /* Send data */
+    comm->send_data(package, 6);
 }
 
 
@@ -223,8 +189,8 @@ void RemoteControlWindow::update_servo_current(){
     }
 
     /* Package data */
-    data += 0x11;
-    data += (uint8_t)0x1;
+    data += 0x13;
+    //data += (uint8_t)0x1;
 
     package = comm->make_pgk(data);
 
@@ -245,19 +211,25 @@ void RemoteControlWindow::update_servo_current(){
     qDebug() << "--------------";
 #endif
 
-    unsigned int adcdata = (uint8_t) response[4] << 8 | (uint8_t)response[5];
+    unsigned int adcdata[7];
 
-    if (response.size() <  4)
-        for (int i=0; i < response.size(); i++)
-             qDebug() <<  "Resp:" << hex << (int)response[i];
+    for (int i=0; i < 14; i+=2)
+        adcdata[i/2] = (uint8_t) response[3+i] << 8 | (uint8_t)response[4+i];
 
+    ui->lcdNumberA0->display((double)adcdata[0]);
+    ui->lcdNumberA1->display((double)adcdata[1]);
+    ui->lcdNumberA2->display((double)adcdata[2]);
+    ui->lcdNumberA3->display((double)adcdata[3]);
+    ui->lcdNumberA4->display((double)adcdata[4]);
+    ui->lcdNumberA5->display((double)adcdata[5]);
+    ui->lcdNumberA6->display((double)adcdata[6]);
 
 #ifdef DEBUG
     qDebug() << "Data:" << adcdata;
     printf("Data: %x\n", adcdata);
 #endif
 
-    ui->lcdNumberA0->display((double)adcdata);
+
 }
 
 void RemoteControlWindow::on_pushButtonYes_clicked(){

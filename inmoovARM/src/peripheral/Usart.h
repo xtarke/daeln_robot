@@ -17,7 +17,7 @@ public:
 	Usart();
 	virtual ~Usart();
 
-	enum {TXBUFFERSIZE = 16 };
+	enum {TXBUFFERSIZE = 24 };
 
 	void sendData(uint8_t *data, uint8_t size);
 

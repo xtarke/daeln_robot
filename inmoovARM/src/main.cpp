@@ -54,8 +54,6 @@ int main(int argc, char* argv[])
 {
 	uint32_t seconds = 0;
 
-	uint8_t responseData[Serial::PKG_MAX_SIZE];
-
 	// Send a greeting to the trace device (skipped on Release).
 	// trace_puts("Hello ARM World!");
 
@@ -82,64 +80,9 @@ int main(int argc, char* argv[])
 	// Infinite loop
 	while (1)
 	{
-		uint8_t comInterface = serialComm.isPackgageReady();
 
-		if (comInterface == 0){
-			serialComm.check_package();
-		}
-		else
-		{
-			uint8_t pkg_type = serialComm.get_data(Serial::PKG_CMD_IDX, comInterface);
-			uint8_t servo_id;
-			uint8_t servo_position;
-			uint16_t servo_current;
+		serialComm.Talk(motors);
 
-			switch (pkg_type){
-				case Serial::PWM_DATA:
-					/* Copy all data ignoring Checksum and header to make response pkg */
-					serialComm.getPaylod(responseData + Serial::PKG_HEADER_SIZE,
-										Serial::SERVO_PAYLOAD_SIZE, comInterface);
-
-					/* Get data */
-					servo_id = responseData[Serial::SERVO_ID_IDX + Serial::PKG_HEADER_SIZE];
-					servo_position = responseData[Serial::SERVO_DATA_IDX + Serial::PKG_HEADER_SIZE];
-					motors.set_position(servo_id, servo_position);
-
-					/* Send response data */
-					responseData[Serial::PKG_CMD_IDX + Serial::PKG_HEADER_SIZE] = Serial::SERVO_ACK_CMD;
-					serialComm.makeAndSend(responseData, Serial::SERVO_PAYLOAD_SIZE, comInterface);
-
-					break;
-
-				case Serial::ADC_DATA:
-					/* Copy all data without Checksum and header to make response pkg */
-					serialComm.getPaylod(responseData + Serial::PKG_HEADER_SIZE,
-										Serial::SERVO_PAYLOAD_SIZE, comInterface);
-					/* Get data */
-					servo_id = responseData[Serial::PKG_HEADER_SIZE + Serial::ADC_ID_IDX];
-					servo_current = motors.getCurrent(servo_id);
-
-					/* Send response data */
-					responseData[Serial::PKG_HEADER_SIZE + Serial::PKG_CMD_IDX] = Serial::ADC_ACK_CMD;
-					/* Send current high and low data */
-					responseData[Serial::PKG_HEADER_SIZE + Serial::PKG_CMD_IDX + Serial::ADC_DATA_IDX] = (servo_current >> 8);
-					responseData[Serial::PKG_HEADER_SIZE + Serial::PKG_CMD_IDX + Serial::ADC_DATA_IDX + 1] = servo_current & 0xff;
-
-					serialComm.makeAndSend(responseData, Serial::ADC_PAYLOAD_SIZE, comInterface);
-					break;
-
-				default:
-					break;
-
-			}
-			serialComm.consume(comInterface);
-			seconds++;
-
-			//uint16_t x = ADC_GetConversionValue(ADC1);
-
-			blinkLed.turnOn();
-
-		 }
 
 		// Count seconds on the trace device.
 		//trace_printf("Second %u\n", seconds);

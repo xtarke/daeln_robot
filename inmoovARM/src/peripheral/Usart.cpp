@@ -103,7 +103,7 @@ Usart::Usart() {
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 
-	USART_InitStructure.USART_BaudRate = 9600;
+	USART_InitStructure.USART_BaudRate = 115200;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;
 	USART_InitStructure.USART_Parity = USART_Parity_No;
@@ -132,7 +132,7 @@ Usart::~Usart() {
 
 void Usart::sendData(uint8_t *data, uint8_t size){
 
-	uint8_t _size = size & 0xf;
+	uint8_t _size = size;//(size < TXBUFFERSIZE ? size : TXBUFFERSIZE);
 
 	/* Wait until USARTy TX DMA1 Channel  Transfer Complete *
 	 * Protection for fast transfers 						*/
