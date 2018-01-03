@@ -15,10 +15,11 @@
 
 #include <semphr.h>
 
+#include "comm.h"
 
 /* You can use http://test.mosquitto.org/ to test mqtt_client instead
  * of setting up your own MQTT server */
-#define MQTT_HOST ("192.168.1.14")
+#define MQTT_HOST ("192.168.25.51")
 #define MQTT_PORT 1883
 
 #define MQTT_USER NULL
@@ -36,9 +37,7 @@ static void  beat_task(void *pvParameters)
 
     while (1) {
         vTaskDelayUntil(&xLastWakeTime, 10000 / portTICK_PERIOD_MS);
-        printf("beat\r\n");
-        
-        uart_putc(1, 'c');
+        //printf("beat\r\n");
         
         snprintf(msg, PUB_MSG_LEN, "Beat %d\r\n", count++);
         if (xQueueSend(publish_queue, (void *)msg, 0) == pdFALSE) {
@@ -212,18 +211,59 @@ static void  wifi_task(void *pvParameters)
     }
 }
 
+static void  uart_task(void *pvParameters){
+
+	uint8_t pkg[24] = { 0, 0, 0x13, 0, 0};
+
+	uint8_t size = 0;
+	uint8_t data = '1';
+
+	for (;;){
+
+	      makeAndSend(pkg, 1);
+
+	      //data = uart_getc(0);
+
+	      // char c = uart_getc(0);
+
+	      //printf("%x\r\n", data);
+
+	      size = uart_rxfifo_wait(0, 2);
+
+
+	      data = uart_getc_nowait(0);
+
+	      uart_putc(0, data);
+
+	      //	      vTaskDelay( 1000 / portTICK_PERIOD_MS );
+
+	      //taskYIELD();
+
+
+	}
+
+
+}
+
+
 void user_init(void)
 {
     uart_set_baud(0, 115200);
     uart_set_baud(1, 115200);
     
+    /* Activate UART 1 PIN */
     gpio_set_iomux_function(2, IOMUX_GPIO2_FUNC_UART1_TXD);
     
     printf("SDK version:%s\n", sdk_system_get_sdk_version());
 
     vSemaphoreCreateBinary(wifi_alive);
     publish_queue = xQueueCreate(3, PUB_MSG_LEN);
+
     xTaskCreate(&wifi_task, "wifi_task",  256, NULL, 2, NULL);
     xTaskCreate(&beat_task, "beat_task", 256, NULL, 3, NULL);
     xTaskCreate(&mqtt_task, "mqtt_task", 1024, NULL, 4, NULL);
+
+
+    xTaskCreate(&uart_task, "uart_task", 256, NULL, 2, NULL);
+
 }
