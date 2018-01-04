@@ -213,31 +213,72 @@ static void  wifi_task(void *pvParameters)
 
 static void  uart_task(void *pvParameters){
 
-	uint8_t pkg[24] = { 0, 0, 0x13, 0, 0};
+	TickType_t xLastWakeTime = xTaskGetTickCount();
 
-	uint8_t size = 0;
-	uint8_t data = '1';
+	uint8_t pkg[PKG_MAX_SIZE] = { 0, 0, 0x13, 0, 0};
+
+	uint8_t i;
+	uint8_t size;
+	uint8_t retries;
 
 	for (;;){
+		/* Wait for wifi */
+		xSemaphoreTake(wifi_alive, portMAX_DELAY);
 
-	      makeAndSend(pkg, 1);
+		pkg[2] = 0x13;
 
-	      //data = uart_getc(0);
+		/* Send a package */
+		makeAndSend(pkg, 1);
 
-	      // char c = uart_getc(0);
+		printf("Sent\n\r");
 
-	      //printf("%x\r\n", data);
+		retries = 30;
+		size = 0;
 
-	      size = uart_rxfifo_wait(0, 2);
+		/* Wait for response: at least 2 bytes (header) */
+		while (size < 2 && (retries)){
+			vTaskDelay( 200 / portTICK_PERIOD_MS );
+			size = uart_rxfifo_size(0);
+			retries--;
+		}
+
+		/* No response, try to send again */
+		if (!retries){
+			vTaskDelay( 2000 / portTICK_PERIOD_MS );
+			uart_flush_rxfifo(0);
+			printf("Uart task: no response\n\r");
+			continue;
+		}
+
+		/* Get received data */
+		for (i=0; (i < 2) & (i < PKG_MAX_SIZE); i++)
+			pkg[i] = uart_getc_nowait(0);
+
+		/* Check for a valid start byte */
+		if (pkg[0] != PKG_START){
+			 taskYIELD();
+			 continue;
+		}
+
+		/* Get remaining data: data and checksum  */
+		size = (pkg[1] < PKG_MAX_SIZE) ? (pkg[1] + 1) : (PKG_MAX_SIZE - 1);
+		size = uart_rxfifo_wait(0, size);
+
+		for (i=0; i < size; i++)
+			pkg[i+2] = uart_getc_nowait(0);
 
 
-	      data = uart_getc_nowait(0);
+		for (i=0; i < size + PKG_HEADER_SIZE; i++)
+			printf("%x ", pkg[i]);
 
-	      uart_putc(0, data);
+		printf("\r\n");
 
-	      //	      vTaskDelay( 1000 / portTICK_PERIOD_MS );
+		// makeAndSend(pkg,1);
 
-	      //taskYIELD();
+
+		vTaskDelay( 5000 / portTICK_PERIOD_MS );
+
+		//taskYIELD();
 
 
 	}

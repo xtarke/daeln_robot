@@ -8,8 +8,7 @@
 #include <stdint.h>
 #include "esp/uart.h"
 
-enum PKG_DEF {PKG_START = 0x7E, PKG_MAX_SIZE = 24, PKG_HEADER_SIZE = 2};
-
+#include "comm.h"
 
 static void send_data(uint8_t *packet_buffer, uint8_t packet_size){
 
@@ -20,13 +19,15 @@ static void send_data(uint8_t *packet_buffer, uint8_t packet_size){
 }
 
 
+
+
 void makeAndSend(uint8_t *data, uint8_t paylodsize) {
 
 	uint8_t checksum = 0xff;
 
 	/* Checksum */
-	for (uint8_t i = PKG_HEADER_SIZE; i < paylodsize; i++){
-		checksum-= data[i];
+	for (uint8_t i = 0; i < paylodsize; i++){
+		checksum-= data[i + PKG_HEADER_SIZE];
 	}
 
 	data[0] = PKG_START;
