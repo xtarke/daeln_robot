@@ -27,6 +27,8 @@
 
 SemaphoreHandle_t wifi_alive;
 QueueHandle_t publish_queue;
+QueueHandle_t uart_queue;
+
 #define PUB_MSG_LEN 16
 
 static void  beat_task(void *pvParameters)
@@ -41,6 +43,23 @@ static void  beat_task(void *pvParameters)
         
         snprintf(msg, PUB_MSG_LEN, "Beat %d\r\n", count++);
         if (xQueueSend(publish_queue, (void *)msg, 0) == pdFALSE) {
+            printf("Publish queue overflow.\r\n");
+        }
+    }
+}
+
+static void  status_task(void *pvParameters)
+{
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    uint8_t pkg[PKG_MAX_SIZE] = {0,0,13};
+    int count = 0;
+
+    while (1) {
+        vTaskDelayUntil(&xLastWakeTime, 5000 / portTICK_PERIOD_MS);
+
+        printf("stauts\r\n");
+
+        if (xQueueSend(uart_queue, (void *)pkg, 0) == pdFALSE) {
             printf("Publish queue overflow.\r\n");
         }
     }
@@ -224,62 +243,66 @@ static void  uart_task(void *pvParameters){
 	for (;;){
 		/* Wait for wifi */
 		xSemaphoreTake(wifi_alive, portMAX_DELAY);
+		xQueueReset(uart_queue);
 
-		pkg[2] = 0x13;
+		 while(xQueueReceive(uart_queue, (void *)pkg, 0) ==
+		                  pdTRUE){
+		    printf("got message to publish\r\n");
 
-		/* Send a package */
-		makeAndSend(pkg, 1);
+			/* Send a package */
+			makeAndSend(pkg, 1);
 
-		printf("Sent\n\r");
+			printf("Sent\n\r");
 
-		retries = 30;
-		size = 0;
+			retries = 30;
+			size = 0;
 
-		/* Wait for response: at least 2 bytes (header) */
-		while (size < 2 && (retries)){
-			vTaskDelay( 200 / portTICK_PERIOD_MS );
-			size = uart_rxfifo_size(0);
-			retries--;
-		}
+			/* Wait for response: at least 2 bytes (header) */
+			while (size < 2 && (retries)){
+				vTaskDelay( 200 / portTICK_PERIOD_MS );
+				size = uart_rxfifo_size(0);
+				retries--;
+			}
 
-		/* No response, try to send again */
-		if (!retries){
-			vTaskDelay( 2000 / portTICK_PERIOD_MS );
-			uart_flush_rxfifo(0);
-			printf("Uart task: no response\n\r");
-			continue;
-		}
+			/* No response, try to send again */
+			if (!retries){
+				vTaskDelay( 2000 / portTICK_PERIOD_MS );
+				uart_flush_rxfifo(0);
+				printf("Uart task: no response\n\r");
+				break;
+			}
 
-		/* Get received data */
-		for (i=0; (i < 2) & (i < PKG_MAX_SIZE); i++)
-			pkg[i] = uart_getc_nowait(0);
+			/* Get received data */
+			for (i=0; (i < 2) & (i < PKG_MAX_SIZE); i++)
+				pkg[i] = uart_getc_nowait(0);
 
-		/* Check for a valid start byte */
-		if (pkg[0] != PKG_START){
-			 taskYIELD();
-			 continue;
-		}
+			/* Check for a valid start byte */
+			if (pkg[0] != PKG_START){
+				 taskYIELD();
+				 //continue;
+				 break;
+			}
 
-		/* Get remaining data: data and checksum  */
-		size = (pkg[1] < PKG_MAX_SIZE) ? (pkg[1] + 1) : (PKG_MAX_SIZE - 1);
-		size = uart_rxfifo_wait(0, size);
+			/* Get remaining data: data and checksum  */
+			size = (pkg[1] < PKG_MAX_SIZE) ? (pkg[1] + 1) : (PKG_MAX_SIZE - 1);
+			size = uart_rxfifo_wait(0, size);
 
-		for (i=0; i < size; i++)
-			pkg[i+2] = uart_getc_nowait(0);
-
-
-		for (i=0; i < size + PKG_HEADER_SIZE; i++)
-			printf("%x ", pkg[i]);
-
-		printf("\r\n");
-
-		// makeAndSend(pkg,1);
+			for (i=0; i < size; i++)
+				pkg[i+2] = uart_getc_nowait(0);
 
 
-		vTaskDelay( 5000 / portTICK_PERIOD_MS );
+			for (i=0; i < size + PKG_HEADER_SIZE; i++)
+				printf("%x ", pkg[i]);
 
-		//taskYIELD();
+			printf("\r\n");
 
+			// makeAndSend(pkg,1);
+
+
+			//vTaskDelay( 5000 / portTICK_PERIOD_MS );
+
+			//taskYIELD();
+		 }
 
 	}
 
@@ -299,12 +322,20 @@ void user_init(void)
 
     vSemaphoreCreateBinary(wifi_alive);
     publish_queue = xQueueCreate(3, PUB_MSG_LEN);
+    uart_queue = xQueueCreate(4, PKG_MAX_SIZE);
 
     xTaskCreate(&wifi_task, "wifi_task",  256, NULL, 2, NULL);
+    xTaskCreate(&uart_task, "uart_task", 256, NULL, 2, NULL);
+
     xTaskCreate(&beat_task, "beat_task", 256, NULL, 3, NULL);
+    xTaskCreate(&status_task, "status_task", 256, NULL, 3, NULL);
+
+
+
+
     xTaskCreate(&mqtt_task, "mqtt_task", 1024, NULL, 4, NULL);
 
 
-    xTaskCreate(&uart_task, "uart_task", 256, NULL, 2, NULL);
+
 
 }
