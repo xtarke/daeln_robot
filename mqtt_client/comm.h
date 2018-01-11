@@ -12,6 +12,10 @@
 #include "esp/uart.h"
 
 enum PKG_DEF {PKG_START = 0x7E, PKG_MAX_SIZE = 24, PKG_HEADER_SIZE = 2};
+enum PKG_TYPE {PWM_DATA = 0x01, ADC_DATA = 0x11, ADC_ALL_DATA = 0x13};
+enum PWM_PKG_DEF {SERVO_ID_IDX = 1, SERVO_DATA_IDX = 2, SERVO_PAYLOAD_SIZE = 3, SERVO_ACK_CMD = 0x80};
+enum ADC_SINGLE_PKG_DEF {ADC_ID_IDX = 1, ADC_DATA_IDX = 2, ADC_PAYLOAD_SIZE = 4,
+	ADC_ALL_DATA_IDX = 1, ADC_ALL_PAYLOAD_SIZE = 15, ADC_ACK_CMD = 0x90};
 
 void makeAndSend(uint8_t *data, uint8_t paylodsize);
 

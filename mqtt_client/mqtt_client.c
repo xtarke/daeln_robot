@@ -16,10 +16,11 @@
 #include <semphr.h>
 
 #include "comm.h"
+#include "motors.h"
 
 /* You can use http://test.mosquitto.org/ to test mqtt_client instead
  * of setting up your own MQTT server */
-#define MQTT_HOST ("192.168.25.71")
+#define MQTT_HOST ("192.168.25.72")
 #define MQTT_PORT 1883
 
 #define MQTT_USER NULL
@@ -35,6 +36,14 @@ static TaskHandle_t xHandlingPkgTask;
 
 #define PUB_MSG_LEN 16
 
+static char *currentTopics[] = {"/robot/servos/currents/0",
+								"/robot/servos/currents/1",
+								"/robot/servos/currents/2",
+								"/robot/servos/currents/3",
+								"/robot/servos/currents/4",
+								"/robot/servos/currents/5",
+								"/robot/servos/currents/6"};
+
 static void  beat_task(void *pvParameters)
 {
     TickType_t xLastWakeTime = xTaskGetTickCount();
@@ -42,10 +51,9 @@ static void  beat_task(void *pvParameters)
     int count = 0;
 
     while (1) {
-        vTaskDelayUntil(&xLastWakeTime, 10000 / portTICK_PERIOD_MS);
-        //printf("beat\r\n");
-        
-        snprintf(msg, PUB_MSG_LEN, "Beat %d\r\n", count++);
+        vTaskDelayUntil(&xLastWakeTime, 2000 / portTICK_PERIOD_MS);
+
+        snprintf(msg, PUB_MSG_LEN, "b", getCurrent(0));
         if (xQueueSend(publish_queue, (void *)msg, 0) == pdFALSE) {
             printf("Publish queue overflow.\r\n");
         }
@@ -144,22 +152,32 @@ static void  mqtt_task(void *pvParameters)
         while(1){
 
             char msg[PUB_MSG_LEN - 1] = "\0";
-            while(xQueueReceive(publish_queue, (void *)msg, 0) ==
-                  pdTRUE){
-                printf("got message to publish\r\n");
-                mqtt_message_t message;
-                message.payload = msg;
-                message.payloadlen = PUB_MSG_LEN;
-                message.dup = 0;
-                message.qos = MQTT_QOS1;
-                message.retained = 0;
-                ret = mqtt_publish(&client, "/beat", &message);
-                if (ret != MQTT_SUCCESS ){
-                    printf("error while publishing message: %d\n", ret );
-                    break;
-                }
+          //  while(xQueueReceive(publish_queue, (void *)msg, 0) ==
+          //        pdTRUE){
 
-			 }
+#ifdef DEBUG_MSGS
+            	printf("got message to publish\r\n");
+#endif
+
+            	int i;
+            	mqtt_message_t message;
+
+            	for (i=0; i < 7; i++){
+            		snprintf(msg, PUB_MSG_LEN, "%u\n\r", getCurrent(i));
+
+            		message.payload = msg;
+            		message.payloadlen = PUB_MSG_LEN;
+            		message.dup = 0;
+            		message.qos = MQTT_QOS1;
+            		message.retained = 0;
+            		ret = mqtt_publish(&client, currentTopics[i], &message);
+
+            		if (ret != MQTT_SUCCESS ){
+            			printf("error while publishing message: %d\n", ret );
+            			break;
+            		}
+            	}
+            //}
 
             ret = mqtt_yield(&client, 1000);
             if (ret == MQTT_DISCONNECTED)
@@ -222,12 +240,11 @@ static void  status_task(void *pvParameters)
 {
     TickType_t xLastWakeTime = xTaskGetTickCount();
     uint8_t pkg[PKG_MAX_SIZE] = {0,0,0x13};
-    int count = 0;
 
     xSemaphoreTake(wifi_alive, portMAX_DELAY);
 
     while (1) {
-        vTaskDelayUntil(&xLastWakeTime, 5000 / portTICK_PERIOD_MS);
+        vTaskDelayUntil(&xLastWakeTime, 1000 / portTICK_PERIOD_MS);
 
         xTaskNotify( xHandlingUartTask, 0, eNoAction );
 
@@ -240,33 +257,27 @@ static void  status_task(void *pvParameters)
 static void  uart_task(void *pvParameters){
 
 	BaseType_t xResult;
+	uint32_t ulNotifiedValue;
 
 	uint8_t pkg[PKG_MAX_SIZE] = { 0, 0, 0x13, 0, 0};
 	uint8_t i;
 	uint8_t size;
 	uint8_t retries;
 
-	uint32_t ulNotifiedValue;
-
 	for (;;){
-		/* Wait for wifi */
-		//xSemaphoreTake(wifi_alive, portMAX_DELAY);
-
 		xResult = xTaskNotifyWait( pdFALSE,          /* Don't clear bits on entry. */
 		                           ULONG_MAX,        /* Clear all bits on exit. */
 		                           &ulNotifiedValue, /* Stores the notified value. */
 								   portMAX_DELAY);
 
+#ifdef DEBUG_MSGS
 		printf("got uart message\r\n");
-
+#endif
 
 		while(xQueueReceive(tx_queue, (void *)pkg, 0) ==
 		                  pdTRUE){
 		 	/* Send a package */
 			makeAndSend(pkg, 1);
-
-			printf("Sent\n\r");
-
 			retries = 30;
 			size = 0;
 
@@ -303,10 +314,12 @@ static void  uart_task(void *pvParameters){
 			for (i=0; i < size; i++)
 				pkg[i+2] = uart_getc_nowait(0);
 
+#ifdef DEBUG_MSGS
 			for (i=0; i < size + PKG_HEADER_SIZE; i++)
 				printf("%x ", pkg[i]);
 
 			printf("\r\n");
+#endif
 
 			xTaskNotify( xHandlingPkgTask, 0, eNoAction );
 
@@ -326,23 +339,42 @@ static void  pkgParser_task(void *pvParameters)
     BaseType_t xResult;
     uint32_t ulNotifiedValue;
 
+    uint8_t i;
+    uint16_t currentData;
+
     while (1) {
 
     	xResult = xTaskNotifyWait( pdFALSE,          /* Don't clear bits on entry. */
-								ULONG_MAX,        /* Clear all bits on exit. */
-							   &ulNotifiedValue, /* Stores the notified value. */
+								ULONG_MAX,       	 /* Clear all bits on exit. */
+							   &ulNotifiedValue, 	 /* Stores the notified value. */
 							   portMAX_DELAY);
 
-
+#ifdef DEBUG_MSGS
     	printf("pkgParser_task\r\n");
-
+#endif
 
    	    while(xQueueReceive(rx_queue, (void *)pkg, 0) == pdTRUE){
 
 
+   	    	switch (pkg[2]) {
+				case PWM_DATA:
+
+					break;
+				case ADC_DATA:
+
+					break;
+
+				case ADC_ACK_CMD:
+					for (i=0; i < N_MOTORS*2; i+=2) {
+						  currentData = (uint8_t) pkg[3+i] << 8 | (uint8_t)pkg[4+i];
+					  	  setCurrent(currentData, i/2);
+					}
+					break;
+
+				default:
+					break;
+			}
    	    }
-
-
     }
 }
 
@@ -356,15 +388,23 @@ void user_init(void)
     
     printf("SDK version:%s\n", sdk_system_get_sdk_version());
 
+    /* Wifi semaphore */
     vSemaphoreCreateBinary(wifi_alive);
+
+    /* Mqtt publish queue */
     publish_queue = xQueueCreate(3, PUB_MSG_LEN);
+
+    /* Serial comm queues */
     tx_queue = xQueueCreate(4, PKG_MAX_SIZE);
     rx_queue = xQueueCreate(4, PKG_MAX_SIZE);
+
+    /* Servo status */
+    motorsInit();
 
     xTaskCreate(&wifi_task, "wifi_task",  256, NULL, 2, NULL);
     xTaskCreate(&uart_task, "uart_task", 256, NULL, 2, &xHandlingUartTask);
 
-    xTaskCreate(&beat_task, "beat_task", 256, NULL, 3, NULL);
+    // xTaskCreate(&beat_task, "beat_task", 256, NULL, 3, NULL);
     xTaskCreate(&status_task, "status_task", 256, NULL, 3, NULL);
 
     xTaskCreate(&pkgParser_task, "pkgParser_task", 256, NULL, 3, &xHandlingPkgTask);
