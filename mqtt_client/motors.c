@@ -23,8 +23,9 @@ void motorsInit(){
 }
 
 void setPos(uint8_t pos, uint8_t i){
-	if (i < N_MOTORS)
+	if (i < N_MOTORS) {
 		servosStatus.pos[i] = pos;
+	}
 }
 
 void setCurrent(uint16_t current, uint8_t i){

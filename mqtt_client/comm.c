@@ -19,10 +19,7 @@ static void send_data(uint8_t *packet_buffer, uint8_t packet_size){
 }
 
 
-
-
-void makeAndSend(uint8_t *data, uint8_t paylodsize) {
-
+void makePkg(uint8_t *data, uint8_t paylodsize){
 	uint8_t checksum = 0xff;
 
 	/* Checksum */
@@ -33,8 +30,14 @@ void makeAndSend(uint8_t *data, uint8_t paylodsize) {
 	data[0] = PKG_START;
 	data[1] = paylodsize;
 	data[PKG_HEADER_SIZE + paylodsize] = checksum;
+}
 
 
+void makeAndSend(uint8_t *data, uint8_t paylodsize) {
+	/* Make pkg */
+	makePkg(data, paylodsize);
+
+	/* Send it */
 	/* Size: Header + payload + checksum */
 	send_data(data, PKG_HEADER_SIZE + paylodsize + 1);
 }

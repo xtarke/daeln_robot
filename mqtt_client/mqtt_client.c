@@ -20,7 +20,7 @@
 
 /* You can use http://test.mosquitto.org/ to test mqtt_client instead
  * of setting up your own MQTT server */
-#define MQTT_HOST ("192.168.25.72")
+#define MQTT_HOST ("192.168.25.70")
 #define MQTT_PORT 1883
 
 #define MQTT_USER NULL
@@ -35,20 +35,30 @@ static TaskHandle_t xHandlingUartTask;
 static TaskHandle_t xHandlingPkgTask;
 
 #define PUB_MSG_LEN 16
+#define NTOPICS 7
 
-static char *currentTopics[] = {"/robot/servos/currents/0",
-								"/robot/servos/currents/1",
-								"/robot/servos/currents/2",
-								"/robot/servos/currents/3",
-								"/robot/servos/currents/4",
-								"/robot/servos/currents/5",
-								"/robot/servos/currents/6"};
+static char *currentTopics[NTOPICS] = {"/robot/servos/currents/0",
+									"/robot/servos/currents/1",
+									"/robot/servos/currents/2",
+									"/robot/servos/currents/3",
+									"/robot/servos/currents/4",
+									"/robot/servos/currents/5",
+									"/robot/servos/currents/6"};
+
+static char *moveTopcis[NTOPICS] = {"/robot/servos/mov/0",
+								"/robot/servos/mov/1",
+								"/robot/servos/mov/2",
+								"/robot/servos/mov/3",
+								"/robot/servos/mov/4",
+								"/robot/servos/mov/5",
+								"/robot/servos/mov/6"};
+
+
 
 static void  beat_task(void *pvParameters)
 {
     TickType_t xLastWakeTime = xTaskGetTickCount();
     char msg[PUB_MSG_LEN];
-    int count = 0;
 
     while (1) {
         vTaskDelayUntil(&xLastWakeTime, 2000 / portTICK_PERIOD_MS);
@@ -75,6 +85,7 @@ static void  topic_received(mqtt_message_data_t *md)
     printf("\r\n");
 }
 
+
 static const char *  get_my_id(void)
 {
     // Use MAC address for Station as unique ID
@@ -100,9 +111,49 @@ static const char *  get_my_id(void)
     return my_id;
 }
 
+static void move_servo(mqtt_message_data_t *md){
+	char msgString[4] = {0,0,0,0};
+	uint8_t size;
+
+	/* Pre-defined packge */
+	uint8_t pkg[PWM_TOTAL_PKG_SIZE] = { 0, //Initializer
+										SERVO_PAYLOAD_SIZE,
+										PWM_DATA,
+										0, //Servo Id
+										0, //Servo pos
+										0 }; //Checksum
+
+	mqtt_message_t *message = md->message;
+
+
+	/* Get servo id from topic */
+	size = md->topic->lenstring.len;
+	pkg[3] = md->topic->lenstring.data[size-1] - '0';
+
+	/* Get servo position from payload */
+	size = (message->payloadlen < 4) ? message->payloadlen : 4;
+	memcpy(msgString, message->payload, size);
+	msgString[3] = 0;
+	pkg[4] = atoi(msgString);
+
+	setPos(pkg[4], 0);
+
+#ifdef DEBUG_MSGS
+	printf("%u =  %u\n\r", pkg[3], pkg[4]);
+#endif
+
+	if (xQueueSend(tx_queue, (void *)pkg, 0) == pdFALSE) {
+		printf("uart_queue overflow.\r\n");
+	}
+
+	xTaskNotify( xHandlingUartTask, 0, eNoAction );
+
+}
+
+
 static void  mqtt_task(void *pvParameters)
 {
-    int ret         = 0;
+    int ret = 0, i;
     struct mqtt_network network;
     mqtt_client_t client   = mqtt_client_default;
     char mqtt_client_id[20];
@@ -146,38 +197,48 @@ static void  mqtt_task(void *pvParameters)
             continue;
         }
         printf("done\r\n");
-        mqtt_subscribe(&client, "/esptopic", MQTT_QOS1, topic_received);
+
+        /* Subscribe to control topics *
+         * #define MQTT_MAX_MESSAGE_HANDLERS in paho_mqtt_c/MQTTClient.h changed to 8  *
+         * Default of only 5 handlers */
+        for (i=0; i < 7; i++){
+        	ret =  mqtt_subscribe(&client, moveTopcis[i], MQTT_QOS1, move_servo);
+        	if (ret != MQTT_SUCCESS)
+        		printf("Error on subscription: %d -> %d\n\n", i, ret);
+        }
+        printf("Subscription ... done\r\n");
+
         xQueueReset(publish_queue);
 
         while(1){
 
             char msg[PUB_MSG_LEN - 1] = "\0";
-          //  while(xQueueReceive(publish_queue, (void *)msg, 0) ==
-          //        pdTRUE){
+
+            // This queue is disable since publish messagers are fixes */
+            //  while(xQueueReceive(publish_queue, (void *)msg, 0) == pdTRUE){
 
 #ifdef DEBUG_MSGS
             	printf("got message to publish\r\n");
 #endif
 
-            	int i;
-            	mqtt_message_t message;
+			int i;
+			mqtt_message_t message;
 
-            	for (i=0; i < 7; i++){
-            		snprintf(msg, PUB_MSG_LEN, "%u\n\r", getCurrent(i));
+			for (i=0; i < NTOPICS; i++){
+				snprintf(msg, PUB_MSG_LEN, "%u\n\r", getCurrent(i));
 
-            		message.payload = msg;
-            		message.payloadlen = PUB_MSG_LEN;
-            		message.dup = 0;
-            		message.qos = MQTT_QOS1;
-            		message.retained = 0;
-            		ret = mqtt_publish(&client, currentTopics[i], &message);
+				message.payload = msg;
+				message.payloadlen = PUB_MSG_LEN;
+				message.dup = 0;
+				message.qos = MQTT_QOS1;
+				message.retained = 0;
+				ret = mqtt_publish(&client, currentTopics[i], &message);
 
-            		if (ret != MQTT_SUCCESS ){
-            			printf("error while publishing message: %d\n", ret );
-            			break;
-            		}
-            	}
-            //}
+				if (ret != MQTT_SUCCESS ){
+					printf("error while publishing message: %d\n", ret );
+					break;
+				}
+			}
 
             ret = mqtt_yield(&client, 1000);
             if (ret == MQTT_DISCONNECTED)
@@ -239,7 +300,7 @@ static void  wifi_task(void *pvParameters)
 static void  status_task(void *pvParameters)
 {
     TickType_t xLastWakeTime = xTaskGetTickCount();
-    uint8_t pkg[PKG_MAX_SIZE] = {0,0,0x13};
+    uint8_t pkg[PKG_MAX_SIZE] = {0,1,0x13};
 
     xSemaphoreTake(wifi_alive, portMAX_DELAY);
 
@@ -277,7 +338,7 @@ static void  uart_task(void *pvParameters){
 		while(xQueueReceive(tx_queue, (void *)pkg, 0) ==
 		                  pdTRUE){
 		 	/* Send a package */
-			makeAndSend(pkg, 1);
+			makeAndSend(pkg, pkg[1]);
 			retries = 30;
 			size = 0;
 
@@ -321,12 +382,12 @@ static void  uart_task(void *pvParameters){
 			printf("\r\n");
 #endif
 
-			xTaskNotify( xHandlingPkgTask, 0, eNoAction );
-
 			/* Send to parser task */
 			if (xQueueSend(rx_queue, (void *)pkg, 0) == pdFALSE) {
 					printf("rx_queue queue overflow.\r\n");
-			 }
+			}
+			/* Unblock parser task */
+			xTaskNotify( xHandlingPkgTask, 0, eNoAction );
 		}
 	}
 }
@@ -357,8 +418,10 @@ static void  pkgParser_task(void *pvParameters)
 
 
    	    	switch (pkg[2]) {
-				case PWM_DATA:
-
+				case SERVO_ACK_CMD:
+#ifdef DEBUG_MSGS
+					printf("PWM ack: %u %u\n", pkg[3], pkg[4]);
+#endif
 					break;
 				case ADC_DATA:
 
@@ -405,8 +468,9 @@ void user_init(void)
     xTaskCreate(&uart_task, "uart_task", 256, NULL, 2, &xHandlingUartTask);
 
     // xTaskCreate(&beat_task, "beat_task", 256, NULL, 3, NULL);
-    xTaskCreate(&status_task, "status_task", 256, NULL, 3, NULL);
 
+
+    xTaskCreate(&status_task, "status_task", 256, NULL, 3, NULL);
     xTaskCreate(&pkgParser_task, "pkgParser_task", 256, NULL, 3, &xHandlingPkgTask);
 
     xTaskCreate(&mqtt_task, "mqtt_task", 1024, NULL, 4, NULL);
