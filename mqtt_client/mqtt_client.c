@@ -55,35 +55,35 @@ static char *moveTopcis[NTOPICS] = {"/robot/servos/mov/0",
 
 
 
-static void  beat_task(void *pvParameters)
-{
-    TickType_t xLastWakeTime = xTaskGetTickCount();
-    char msg[PUB_MSG_LEN];
+//static void  beat_task(void *pvParameters)
+//{
+//    TickType_t xLastWakeTime = xTaskGetTickCount();
+//    char msg[PUB_MSG_LEN];
+//
+//    while (1) {
+//        vTaskDelayUntil(&xLastWakeTime, 2000 / portTICK_PERIOD_MS);
+//
+//        snprintf(msg, PUB_MSG_LEN, "b: %u\n\r", getCurrent(0));
+//        if (xQueueSend(publish_queue, (void *)msg, 0) == pdFALSE) {
+//            printf("Publish queue overflow.\r\n");
+//        }
+//    }
+//}
 
-    while (1) {
-        vTaskDelayUntil(&xLastWakeTime, 2000 / portTICK_PERIOD_MS);
-
-        snprintf(msg, PUB_MSG_LEN, "b", getCurrent(0));
-        if (xQueueSend(publish_queue, (void *)msg, 0) == pdFALSE) {
-            printf("Publish queue overflow.\r\n");
-        }
-    }
-}
-
-static void  topic_received(mqtt_message_data_t *md)
-{
-    int i;
-    mqtt_message_t *message = md->message;
-    printf("Received: ");
-    for( i = 0; i < md->topic->lenstring.len; ++i)
-        printf("%c", md->topic->lenstring.data[ i ]);
-
-    printf(" = ");
-    for( i = 0; i < (int)message->payloadlen; ++i)
-        printf("%c", ((char *)(message->payload))[i]);
-
-    printf("\r\n");
-}
+//static void  topic_received(mqtt_message_data_t *md)
+//{
+//    int i;
+//    mqtt_message_t *message = md->message;
+//    printf("Received: ");
+//    for( i = 0; i < md->topic->lenstring.len; ++i)
+//        printf("%c", md->topic->lenstring.data[ i ]);
+//
+//    printf(" = ");
+//    for( i = 0; i < (int)message->payloadlen; ++i)
+//        printf("%c", ((char *)(message->payload))[i]);
+//
+//    printf("\r\n");
+//}
 
 
 static const char *  get_my_id(void)
@@ -316,7 +316,6 @@ static void  status_task(void *pvParameters)
 }
 
 static void  uart_task(void *pvParameters){
-
 	BaseType_t xResult;
 	uint32_t ulNotifiedValue;
 
@@ -330,6 +329,10 @@ static void  uart_task(void *pvParameters){
 		                           ULONG_MAX,        /* Clear all bits on exit. */
 		                           &ulNotifiedValue, /* Stores the notified value. */
 								   portMAX_DELAY);
+
+		if (xResult != pdTRUE){
+			printf("uart_task: eror on xTaskNotifyWait\r\n");
+		}
 
 #ifdef DEBUG_MSGS
 		printf("got uart message\r\n");
@@ -394,8 +397,7 @@ static void  uart_task(void *pvParameters){
 
 static void  pkgParser_task(void *pvParameters)
 {
-    TickType_t xLastWakeTime = xTaskGetTickCount();
-    uint8_t pkg[PKG_MAX_SIZE];
+	uint8_t pkg[PKG_MAX_SIZE];
 
     BaseType_t xResult;
     uint32_t ulNotifiedValue;
@@ -409,6 +411,10 @@ static void  pkgParser_task(void *pvParameters)
 								ULONG_MAX,       	 /* Clear all bits on exit. */
 							   &ulNotifiedValue, 	 /* Stores the notified value. */
 							   portMAX_DELAY);
+
+    	if (xResult != pdTRUE){
+    		printf("pkgParser_task: eror on xTaskNotifyWait \r\n");
+    	}
 
 #ifdef DEBUG_MSGS
     	printf("pkgParser_task\r\n");
