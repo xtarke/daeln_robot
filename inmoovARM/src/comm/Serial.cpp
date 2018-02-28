@@ -48,6 +48,17 @@ void Serial::Talk(ServoMotor &motors){
 	uint8_t responseData[PKG_MAX_SIZE];
 	uint8_t comInterface = isPackgageReady();
 
+	uint8_t buffer[] = {1, 2, 0x13};
+
+
+//	usart.sendData(buffer, 3);
+//
+//
+//
+//	return;
+
+
+
 	if (comInterface == 0){
 		check_package();
 	}

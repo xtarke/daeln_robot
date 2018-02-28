@@ -20,6 +20,7 @@ public:
 	enum {TXBUFFERSIZE = 24 };
 
 	void sendData(uint8_t *data, uint8_t size);
+	uint8_t putChar (uint8_t c);
 
 private:
 	uint8_t TxBuffer[TXBUFFERSIZE];

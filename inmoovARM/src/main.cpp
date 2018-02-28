@@ -90,6 +90,8 @@ int main(int argc, char* argv[])
 		//timer.sleep(1000);
 
 
+
+
 		//for (int i=0; i < Adc::N_CHANNELS; i++) {
 
 //		trace_printf("ADC: %u %u %u %u %u %u %u \n",  motors.getCurrent(0),

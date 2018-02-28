@@ -20,7 +20,7 @@
 
 /* You can use http://test.mosquitto.org/ to test mqtt_client instead
  * of setting up your own MQTT server */
-#define MQTT_HOST ("192.168.25.70")
+#define MQTT_HOST ("192.168.0.100")
 #define MQTT_PORT 1883
 
 #define MQTT_USER NULL
@@ -36,6 +36,14 @@ static TaskHandle_t xHandlingPkgTask;
 
 #define PUB_MSG_LEN 16
 #define NTOPICS 7
+
+
+/* Chnage
+ * #define LIBC_UART_N 0 to 1 in newlib_syscalls.c
+ *
+ */
+
+
 
 static char *currentTopics[NTOPICS] = {"/robot/servos/currents/0",
 									"/robot/servos/currents/1",
