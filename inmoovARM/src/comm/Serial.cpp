@@ -48,16 +48,6 @@ void Serial::Talk(ServoMotor &motors){
 	uint8_t responseData[PKG_MAX_SIZE];
 	uint8_t comInterface = isPackgageReady();
 
-	uint8_t buffer[] = {1, 2, 0x13};
-
-
-//	usart.sendData(buffer, 3);
-//
-//
-//
-//	return;
-
-
 
 	if (comInterface == 0){
 		check_package();
@@ -110,8 +100,10 @@ void Serial::Talk(ServoMotor &motors){
 				for (uint8_t i=0; i < ServoMotor::N_MOTORS*2; i+=2){
 					servo_current = motors.getCurrent(i / 2);
 					/* Send current high and low data */
-					responseData[Serial::PKG_HEADER_SIZE + Serial::ADC_ALL_DATA_IDX + i] = (servo_current >> 8);
-					responseData[Serial::PKG_HEADER_SIZE + Serial::ADC_ALL_DATA_IDX + i + 1] = servo_current & 0xff;
+					//responseData[Serial::PKG_HEADER_SIZE + Serial::ADC_ALL_DATA_IDX + i] = (servo_current >> 8);
+					//responseData[Serial::PKG_HEADER_SIZE + Serial::ADC_ALL_DATA_IDX + i + 1] = servo_current & 0xff;
+					responseData[Serial::PKG_HEADER_SIZE + Serial::ADC_ALL_DATA_IDX + i] = 0;
+					responseData[Serial::PKG_HEADER_SIZE + Serial::ADC_ALL_DATA_IDX + i + 1] = 7; //servo_current & 0xff;
 				}
 
 				makeAndSend(responseData, Serial::ADC_ALL_PAYLOAD_SIZE, comInterface);

@@ -235,8 +235,10 @@ static void  mqtt_task(void *pvParameters)
 			for (i=0; i < NTOPICS; i++){
 				snprintf(msg, PUB_MSG_LEN, "%u\n\r", getCurrent(i));
 
+				uint8_t size = strlen(msg);
+
 				message.payload = msg;
-				message.payloadlen = PUB_MSG_LEN;
+				message.payloadlen = size; // PUB_MSG_LEN;
 				message.dup = 0;
 				message.qos = MQTT_QOS1;
 				message.retained = 0;
