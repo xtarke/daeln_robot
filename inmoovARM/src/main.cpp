@@ -51,7 +51,7 @@ namespace
 
 
 int main(int argc, char* argv[])
-{
+ {
 	uint32_t seconds = 0;
 
 	// Send a greeting to the trace device (skipped on Release).
@@ -86,8 +86,10 @@ int main(int argc, char* argv[])
 		serialComm.Talk(motors);
 
 
+		///Timer::ticks_t currentTick = Timer::get_systick();
+
 		// Count seconds on the trace device.
-		//trace_printf("Second %u\n", seconds);
+		//trace_printf("Second %u\n", currentTick);
 
 		//timer.sleep(1000);
 

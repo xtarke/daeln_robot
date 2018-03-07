@@ -1,5 +1,6 @@
 #include "espressif/esp_common.h"
 #include "esp/uart.h"
+#include "esp8266.h"
 
 #include <string.h>
 
@@ -38,7 +39,7 @@ static TaskHandle_t xHandlingPkgTask;
 #define NTOPICS 7
 
 
-/* Chnage
+/* Printf:
  * #define LIBC_UART_N 0 to 1 in newlib_syscalls.c
  *
  */
@@ -63,20 +64,18 @@ static char *moveTopcis[NTOPICS] = {"/robot/servos/mov/0",
 
 
 
-//static void  beat_task(void *pvParameters)
-//{
-//    TickType_t xLastWakeTime = xTaskGetTickCount();
-//    char msg[PUB_MSG_LEN];
-//
-//    while (1) {
-//        vTaskDelayUntil(&xLastWakeTime, 2000 / portTICK_PERIOD_MS);
-//
-//        snprintf(msg, PUB_MSG_LEN, "b: %u\n\r", getCurrent(0));
-//        if (xQueueSend(publish_queue, (void *)msg, 0) == pdFALSE) {
-//            printf("Publish queue overflow.\r\n");
-//        }
-//    }
-//}
+static void  beat_task(void *pvParameters)
+{
+	GPIO.ENABLE_OUT_SET = BIT(2);
+	IOMUX_GPIO2 = IOMUX_GPIO2_FUNC_GPIO | IOMUX_PIN_OUTPUT_ENABLE; /* change this line if you change 'gpio' */
+
+	while(1) {
+		GPIO.OUT_SET = BIT(2);
+		vTaskDelay(1000 / portTICK_PERIOD_MS);
+		GPIO.OUT_CLEAR = BIT(2);
+		vTaskDelay(1000 / portTICK_PERIOD_MS);
+	}
+}
 
 //static void  topic_received(mqtt_message_data_t *md)
 //{
@@ -480,15 +479,15 @@ void user_init(void)
     /* Servo status */
     motorsInit();
 
-    xTaskCreate(&wifi_task, "wifi_task",  256, NULL, 2, NULL);
-    xTaskCreate(&uart_task, "uart_task", 256, NULL, 2, &xHandlingUartTask);
 
-    // xTaskCreate(&beat_task, "beat_task", 256, NULL, 3, NULL);
+    xTaskCreate(&beat_task, "beat_task", 256, NULL, 2, NULL);
 
+    xTaskCreate(&wifi_task, "wifi_task",  256, NULL, 3, NULL);
+    xTaskCreate(&uart_task, "uart_task", 256, NULL, 3, &xHandlingUartTask);
 
-    xTaskCreate(&status_task, "status_task", 256, NULL, 3, NULL);
-    xTaskCreate(&pkgParser_task, "pkgParser_task", 256, NULL, 3, &xHandlingPkgTask);
+    xTaskCreate(&status_task, "status_task", 256, NULL, 4, NULL);
+    xTaskCreate(&pkgParser_task, "pkgParser_task", 256, NULL, 4, &xHandlingPkgTask);
 
-    xTaskCreate(&mqtt_task, "mqtt_task", 1024, NULL, 4, NULL);
+    xTaskCreate(&mqtt_task, "mqtt_task", 1024, NULL, 5, NULL);
 
 }

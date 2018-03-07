@@ -15,17 +15,15 @@ extern "C" void HAL_IncTick(void);
 // ----------------------------------------------------------------------------
 
 volatile Timer::ticks_t Timer::ms_delayCount;
+volatile Timer::ticks_t Timer::ms_timeout_01;
 
 // ----------------------------------------------------------------------------
 
-void
-Timer::sleep(ticks_t ticks)
-{
+void Timer::sleep(ticks_t ticks) {
   ms_delayCount = ticks;
 
   // Busy wait until the SysTick decrements the counter to zero.
-  while (ms_delayCount != 0u)
-    ;
+  while (ms_delayCount != 0u);
 }
 
 // ----- SysTick_Handler() ----------------------------------------------------

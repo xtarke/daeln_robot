@@ -281,10 +281,19 @@ void Serial::checkUSBpackage(){
 		}
 }
 
+#include "diag/Trace.h"
+
 void Serial::checkUARTpackage(){
 
 	volatile uint8_t data;
-	Timer::ticks_t currentTick = 0;
+	static uint8_t pkgBegin = false;
+
+	if (pkgBegin == true && Timer::isTimeouted_01() ){
+		UARTpackageReady = false;
+		UARTindex = 0;
+		UARTsize = 0;
+		pkgBegin = false;
+	}
 
 	while(!UARTQueue.isEmpty()){
 
@@ -296,6 +305,8 @@ void Serial::checkUARTpackage(){
 		case 0:
 			/* Check start delimiter: */
 			if(data == PKG_START){
+				pkgBegin = true;
+				Timer::setTimeout_01(100);
 				UARTindex++;
 			}
 			break;
@@ -308,25 +319,6 @@ void Serial::checkUARTpackage(){
 
 		/* Payload and checksum */
 		default:
-			/* if(index < ((size) + 2)){
-				packageData[(index) - 2] = data;
-				index++;
-			}else{
-				for(i=0; i<(index-2); i++){
-					data += packageData[i];
-				}
-				if(data != 0xFF){
-
-					packageReady = false;
-					index = 0;
-					size = 0;
-				}
-				else{
-					packageReady = true;
-					index = 0;
-				}
-			}*/
-
 			/* Package size plus 2 */
 			if (UARTindex < (UARTsize + 2)){
 				UARTpackageData[(UARTindex) - 2] = data;
@@ -336,8 +328,8 @@ void Serial::checkUARTpackage(){
 				UARTpackageReady = true;
 				UARTindex = 0;
 				UARTsize = 0;
+				pkgBegin = false;
 			}
-
 			break;
 			}
 		}

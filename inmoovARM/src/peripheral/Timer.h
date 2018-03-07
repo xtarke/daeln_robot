@@ -19,6 +19,8 @@ public:
 private:
   static volatile ticks_t ms_delayCount;
 
+  static volatile ticks_t ms_timeout_01;
+
 public:
   // Default constructor
   Timer() = default;
@@ -33,14 +35,23 @@ public:
   static void
   sleep(ticks_t ticks);
 
+  static void setTimeout_01 (ticks_t ticks){ms_timeout_01 = ticks;}
+  static bool isTimeouted_01() {
+	  bool val = (ms_timeout_01 == 0 ? true : false);
+	  return val;
+  }
+
   inline static void
   tick(void)
   {
     // Decrement to zero the counter used by the delay routine.
-    if (ms_delayCount != 0u)
-      {
+    if (ms_delayCount != 0u) {
         --ms_delayCount;
-      }
+    }
+
+    if (ms_timeout_01 != 0u)
+    	ms_timeout_01--;
+
   }
 
   static uint32_t get_systick(){
