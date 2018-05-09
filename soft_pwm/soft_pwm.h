@@ -1,12 +1,11 @@
-/* Implementation of PWM support for the Espressif SDK.
+/* Implementation of PWM support for the ESP with open-rtos SDK.
  *
- * Part of esp-open-rtos
- * Copyright (C) 2015 Guillem Pascual Ginovart (https://github.com/gpascualg)
- * Copyright (C) 2015 Javier Cardona (https://github.com/jcard0na)
- * BSD Licensed as described in the file LICENSE
+ * Based example from esp-open-rtos
+ * Copyright (C) 2018 Renan Augusto Starke (https://github.com/xtarke)
  */
-#ifndef EXTRAS_PWM_H_
-#define EXTRAS_PWM_H_
+
+#ifndef SOFT_PWM_H_
+#define SOFT_PWM_H_
 
 #include <stdint.h>
 
@@ -69,4 +68,4 @@ void pwm_stop();
 }
 #endif
 
-#endif /* EXTRAS_PWM_H_ */
+#endif /* SOFT_PWM_H_ */
