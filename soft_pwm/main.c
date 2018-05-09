@@ -24,7 +24,7 @@ void task1(void *pvParameters)
         //printf("duty cycle set to %d/UINT16_MAX%%\r\n", count);
         //pwm_set_duty(count);
 
-        set_duty(0, dutty);
+        //set_duty(0, dutty);
 
         dutty += dutty + 200;
 
@@ -52,22 +52,14 @@ void user_init(void)
     
     pwm_init(2, pins);
 
-    printf("pwm_set_freq(1000)     # 1 kHz\n");
-
     pwm_set_resolution_freq(100000);
+    pwm_set_freq(2000);
 
-    //pwm_set_freq(100000);
-    //pwm_set_freq(500);
-   
-    
-  //  start_timer();
-
-
-    printf("pwm_set_duty(UINT16_MAX/2)     # 50%%\n");
-    //pwm_set_duty(UINT16_MAX/2);
+    pwm_set_duty(0,0);
+    pwm_set_duty(1,0);
 
     printf("pwm_start()\n");
-    //pwm_start();
+    pwm_start();
 
     xTaskCreate(task1, "tsk1", 256, NULL, 2, NULL);
 }
