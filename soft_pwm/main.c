@@ -1,9 +1,14 @@
-/* Very basic example to test the pwm library
- * Hook up an LED to pin14 and you should see the intensity change
+/*
+ * Multichannel software PWM. Duty cycle is changed by
+ * MQTT pwm topic:
+ *
+ * Example: publich 1800 in pwm topic
+ * 1800 -> first character (1) is channel,
+ *      -> others (800) are duty cycle
  *
  * Part of esp-open-rtos
- * Copyright (C) 2015 Javier Cardona (https://github.com/jcard0na)
- * BSD Licensed as described in the file LICENSE
+ * Copyright (C) 2018 Renan Augusto Starke (https://github.com/xtarke)
+ *
  */
 #include "espressif/esp_common.h"
 #include "esp/uart.h"
@@ -12,16 +17,24 @@
 #include "soft_pwm.h"
 #include "network.h"
 
-
 #include <paho_mqtt_c/MQTTESP8266.h>
 #include <paho_mqtt_c/MQTTClient.h>
+
+#ifdef MAIN_DEBUG
+#define debug(fmt, ...) printf("%s: " fmt "\n", "PWM", ## __VA_ARGS__)
+#else
+#define debug(fmt, ...)
+#endif
+
 
 void  topic_received(mqtt_message_data_t *md)
 {
     uint8_t channel;
     uint32_t duty = 0;
-	int i;
     mqtt_message_t *message = md->message;
+
+ #ifdef MAIN_DEBUG
+    int i;
     printf("Received: ");
     for( i = 0; i < md->topic->lenstring.len; ++i)
         printf("%c", md->topic->lenstring.data[ i ]);
@@ -31,6 +44,7 @@ void  topic_received(mqtt_message_data_t *md)
         printf("%c", ((char *)(message->payload))[i]);
 
     printf("\r\n");
+#endif
 
     char *data = (char *)md->message->payload;
     data[message->payloadlen] = 0;
@@ -38,11 +52,12 @@ void  topic_received(mqtt_message_data_t *md)
     channel =  ((char *)(message->payload))[0] - '0';
     duty =   atoi(++data);
 
+#ifdef MAIN_DEBUG
     printf("channel: %x\n", channel);
     printf("duty: %d\n", duty);
+#endif
 
     pwm_set_duty(channel,duty);
-
 }
 
 
@@ -55,7 +70,7 @@ static void  beat_task(void *pvParameters)
 
     while (1) {
         vTaskDelayUntil(&xLastWakeTime, 10000 / portTICK_PERIOD_MS);
-        printf("beat\r\n");
+
         snprintf(msg, PUB_MSG_LEN, "Beat %d\r\n", count++);
         if (xQueueSend(publish_queue, (void *)msg, 0) == pdFALSE) {
             printf("Publish queue overflow.\r\n");
@@ -71,7 +86,6 @@ void user_init(void)
 
     printf("SDK version:%s\n", sdk_system_get_sdk_version());
 
-    printf("pwm_init(1, [14])\n");
     pins[0] = 16;
     pins[1] = 5;
     pins[2] = 4;
@@ -91,7 +105,6 @@ void user_init(void)
 	pwm_set_duty(4,800);
 	pwm_set_duty(5,1000);
 
-    printf("pwm_start()\n");
     pwm_start();
 
     vSemaphoreCreateBinary(wifi_alive);
