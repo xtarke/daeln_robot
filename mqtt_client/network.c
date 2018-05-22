@@ -24,6 +24,8 @@
 #include <semphr.h>
 
 #include "network.h"
+#include "comm.h"
+#include "motors.h"
 
 /* You can use http://test.mosquitto.org/ to test mqtt_client instead
  * of setting up your own MQTT server */
@@ -33,8 +35,64 @@
 #define MQTT_USER NULL
 #define MQTT_PASS NULL
 
+#define DEBUG
+
+#ifdef DEBUG
+#define debug(fmt, ...) printf("%s: " fmt "\n", "PWM", ## __VA_ARGS__)
+#else
+#define debug(fmt, ...)
+#endif
+
 QueueHandle_t publish_queue;
 SemaphoreHandle_t wifi_alive;
+
+#define NTOPICS 4
+
+static char *moveTopcis[NTOPICS] = {"/robot/servos/mov/0",
+								"/robot/servos/mov/1",
+								"/robot/servos/mov/2",
+								"/robot/servos/mov/3"};
+
+
+
+static void move_servo(mqtt_message_data_t *md){
+	char msgString[4] = {0,0,0,0};
+	uint8_t size;
+
+	/* Pre-defined packge */
+	uint8_t pkg[PWM_TOTAL_PKG_SIZE] = { 0, //Initializer
+										SERVO_PAYLOAD_SIZE,
+										PWM_DATA,
+										0, //Servo Id
+										0, //Servo pos
+										0 }; //Checksum
+
+	mqtt_message_t *message = md->message;
+
+
+	/* Get servo id from topic */
+	size = md->topic->lenstring.len;
+	pkg[3] = md->topic->lenstring.data[size-1] - '0';
+
+	/* Get servo position from payload */
+	size = (message->payloadlen < 4) ? message->payloadlen : 4;
+	memcpy(msgString, message->payload, size);
+	msgString[3] = 0;
+	pkg[4] = atoi(msgString);
+
+	setPos(pkg[4], pkg[3]);
+
+//#ifdef DEBUG_MSGS
+	printf("%u =  %u\n\r", pkg[3], pkg[4]);
+//#endif
+
+	if (xQueueSend(tx_queue, (void *)pkg, 0) == pdFALSE) {
+		debug("uart_queue overflow.\r\n");
+	}
+
+	xTaskNotify( xHandlingUartTask, 0, eNoAction );
+}
+
 
 static const char *  get_my_id(void)
 {
@@ -172,7 +230,20 @@ void  mqtt_task(void *pvParameters)
             continue;
         }
         printf("done\r\n");
-        mqtt_subscribe(&client, "/esptopic", MQTT_QOS1, topic_received);
+        //mqtt_subscribe(&client, "/esptopic", MQTT_QOS1, topic_received);
+
+
+        /* Subscribe to control topics *
+		* #define MQTT_MAX_MESSAGE_HANDLERS in paho_mqtt_c/MQTTClient.h changed to 8  *
+		* Default of only 5 handlers */
+        for (int i=0; i < NTOPICS; i++){
+			ret =  mqtt_subscribe(&client, moveTopcis[i], MQTT_QOS1, move_servo);
+
+			if (ret != MQTT_SUCCESS)
+				printf("Error on subscription: %d -> %d\n\n", i, ret);
+		   }
+	    printf("Subscription ... done\r\n");
+
         xQueueReset(publish_queue);
 
         while(1){

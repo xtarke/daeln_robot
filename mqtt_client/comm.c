@@ -23,6 +23,13 @@ QueueHandle_t rx_queue;
 TaskHandle_t xHandlingUartTask;
 TaskHandle_t xHandlingPkgTask;
 
+#define DEBUG
+
+#ifdef DEBUG
+#define debug(fmt, ...) printf("%s: " fmt "\n", "PWM", ## __VA_ARGS__)
+#else
+#define debug(fmt, ...)
+#endif
 
 void  status_task(void *pvParameters)
 {
@@ -37,7 +44,7 @@ void  status_task(void *pvParameters)
         xTaskNotify( xHandlingUartTask, 0, eNoAction );
 
         if (xQueueSend(tx_queue, (void *)pkg, 0) == pdFALSE) {
-            printf("uart_queue overflow.\r\n");
+        	debug("uart_queue overflow.\r\n");
         }
     }
 }
@@ -59,7 +66,7 @@ void  uart_task(void *pvParameters){
 								   portMAX_DELAY);
 
 		if (xResult != pdTRUE){
-			printf("uart_task: eror on xTaskNotifyWait\r\n");
+			debug("uart_task: eror on xTaskNotifyWait\r\n");
 		}
 
 #ifdef DEBUG_MSGS
@@ -84,7 +91,7 @@ void  uart_task(void *pvParameters){
 			if (!retries){
 				vTaskDelay( 2000 / portTICK_PERIOD_MS );
 				uart_flush_rxfifo(0);
-				printf("Uart task: no response\n\r");
+				debug("Uart task: no response\n\r");
 				break;
 			}
 
@@ -115,7 +122,7 @@ void  uart_task(void *pvParameters){
 
 			/* Send to parser task */
 			if (xQueueSend(rx_queue, (void *)pkg, 0) == pdFALSE) {
-					printf("rx_queue queue overflow.\r\n");
+				debug("rx_queue queue overflow.\r\n");
 			}
 			/* Unblock parser task */
 			xTaskNotify( xHandlingPkgTask, 0, eNoAction );

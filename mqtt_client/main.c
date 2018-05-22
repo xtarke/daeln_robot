@@ -20,6 +20,14 @@
 #include "network.h"
 #include "comm.h"
 
+#define DEBUG
+
+#ifdef DEBUG
+#define debug(fmt, ...) printf("%s: " fmt "\n", "PWM", ## __VA_ARGS__)
+#else
+#define debug(fmt, ...)
+#endif
+
 
 static void  beat_task(void *pvParameters)
 {
@@ -29,10 +37,10 @@ static void  beat_task(void *pvParameters)
 
     while (1) {
         vTaskDelayUntil(&xLastWakeTime, 10000 / portTICK_PERIOD_MS);
-        printf("beat13246\r\n");
+        debug("beat\r\n");
         snprintf(msg, PUB_MSG_LEN, "Beat %d\r\n", count++);
         if (xQueueSend(publish_queue, (void *)msg, 0) == pdFALSE) {
-            printf("Publish queue overflow.\r\n");
+        	debug("Publish queue overflow.\r\n");
         }
     }
 }
@@ -54,7 +62,7 @@ static void  hearbeat_task(void *pvParameters)
 
 void user_init(void)
 {
-    uart_set_baud(0, 115200);
+    uart_set_baud(0, 38400);
     printf("SDK version:%s\n", sdk_system_get_sdk_version());
 
     vSemaphoreCreateBinary(wifi_alive);
@@ -74,7 +82,7 @@ void user_init(void)
 
     xTaskCreate(&uart_task, "uart_task", 256, NULL, 3, &xHandlingUartTask);
 
-    xTaskCreate(&status_task, "status_task", 256, NULL, 4, NULL);
+   // xTaskCreate(&status_task, "status_task", 256, NULL, 4, NULL);
     xTaskCreate(&pkgParser_task, "pkgParser_task", 256, NULL, 4, &xHandlingPkgTask);
 
     xTaskCreate(&beat_task, "beat_task", 256, NULL, 6, NULL);
