@@ -29,13 +29,13 @@
 
 /* You can use http://test.mosquitto.org/ to test mqtt_client instead
  * of setting up your own MQTT server */
-#define MQTT_HOST ("192.168.8.1")
+#define MQTT_HOST ("192.168.0.113")
 #define MQTT_PORT 1883
 
 #define MQTT_USER NULL
 #define MQTT_PASS NULL
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 #define debug(fmt, ...) printf("%s: " fmt "\n", "PWM", ## __VA_ARGS__)
@@ -48,11 +48,16 @@ SemaphoreHandle_t wifi_alive;
 
 #define NTOPICS 4
 
+static char *moveTopcis[NTOPICS] = {"/robot/head/vert",
+								"/robot/head/horz",
+								"/robot/left/vert",
+								"/robot/left/horz"};
+/*
 static char *moveTopcis[NTOPICS] = {"/robot/servos/mov/0",
 								"/robot/servos/mov/1",
 								"/robot/servos/mov/2",
 								"/robot/servos/mov/3"};
-
+*/
 
 
 static void move_servo(mqtt_message_data_t *md){
@@ -68,8 +73,7 @@ static void move_servo(mqtt_message_data_t *md){
 										0 }; //Checksum
 
 	mqtt_message_t *message = md->message;
-
-
+	
 	/* Get servo id from topic */
 	size = md->topic->lenstring.len;
 	pkg[3] = md->topic->lenstring.data[size-1] - '0';
@@ -82,9 +86,9 @@ static void move_servo(mqtt_message_data_t *md){
 
 	setPos(pkg[4], pkg[3]);
 
-//#ifdef DEBUG_MSGS
-	printf("%u =  %u\n\r", pkg[3], pkg[4]);
-//#endif
+#ifdef DEBUG_MSGS
+	debug("%u =  %u\n\r", pkg[3], pkg[4]);
+#endif
 
 	if (xQueueSend(tx_queue, (void *)pkg, 0) == pdFALSE) {
 		debug("uart_queue overflow.\r\n");
@@ -245,13 +249,81 @@ void  mqtt_task(void *pvParameters)
 	    printf("Subscription ... done\r\n");
 
         xQueueReset(publish_queue);
+		
+		//------------------------------------------------------------------
+	/*
+		mqtt_message_t message;
 
+		char msg_1[] = "robot/head/vert";
+		char msg_2[] = "robot/head/horz";
+		char msg_3[] = "robot/left/vert";
+		char msg_4[] = "robot/left/horz";
+
+		uint8_t size = strlen(msg_1);
+
+		message.payload = msg_1;
+		message.payloadlen = size; // PUB_MSG_LEN;
+		message.dup = 0;
+		message.qos = MQTT_QOS1;
+		message.retained = 0;
+
+		// CONEXAO COM QT
+		ret = mqtt_publish(&client, "robot", &message);
+		if (ret != MQTT_SUCCESS ){
+			printf("error while publishing message: %d\n", ret );
+			break;
+		}
+
+		size = strlen(msg_2);
+
+		message.payload = msg_2;
+		message.payloadlen = size; // PUB_MSG_LEN;
+		message.dup = 0;
+		message.qos = MQTT_QOS1;
+		message.retained = 0;
+		
+		ret = mqtt_publish(&client, "robot", &message);
+		if (ret != MQTT_SUCCESS ){
+			printf("error while publishing message: %d\n", ret );
+			break;
+		}
+
+		size = strlen(msg_3);
+
+		message.payload = msg_3;
+		message.payloadlen = size; // PUB_MSG_LEN;
+		message.dup = 0;
+		message.qos = MQTT_QOS1;
+		message.retained = 0;
+		
+		ret = mqtt_publish(&client, "robot", &message);
+		if (ret != MQTT_SUCCESS ){
+			printf("error while publishing message: %d\n", ret );
+			break;
+		}
+		
+		size = strlen(msg_4);
+
+		message.payload = msg_4;
+		message.payloadlen = size; // PUB_MSG_LEN;
+		message.dup = 0;
+		message.qos = MQTT_QOS1;
+		message.retained = 0;
+		
+		ret = mqtt_publish(&client, "robot", &message);
+		if (ret != MQTT_SUCCESS ){
+			printf("error while publishing message: %d\n", ret );
+			break;
+		}
+		*/
+		//------------------------------------------------------------------
+		
         while(1){
 
             char msg[PUB_MSG_LEN - 1] = "\0";
             while(xQueueReceive(publish_queue, (void *)msg, 0) ==
                   pdTRUE){
-                printf("got message to publish\r\n");
+                //printf("got message to publish\r\n");
                 mqtt_message_t message;
                 message.payload = msg;
                 message.payloadlen = PUB_MSG_LEN;

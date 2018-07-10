@@ -20,7 +20,7 @@
 #include "network.h"
 #include "comm.h"
 
-#define DEBUG
+// #define DEBUG
 
 #ifdef DEBUG
 #define debug(fmt, ...) printf("%s: " fmt "\n", "PWM", ## __VA_ARGS__)

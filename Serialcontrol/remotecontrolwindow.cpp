@@ -233,27 +233,32 @@ void RemoteControlWindow::update_servo_current(){
 }
 
 void RemoteControlWindow::on_pushButtonYes_clicked(){
-//    /* Current on/off state */
-//    static bool on = false;
-//    /* Robot head */
-//    Head head(*comm);
 
-//    if (!comm->isReady()){
-//        error_message->showMessage("Serial port is not open!");
-//        return;
-//    }
+    int dataInt = ui->plainTextEdit->toPlainText().toInt();
 
-//    if (on == false){
-//        timer_yes->setInterval(1000);
-//        timer_yes->start();
-//        on = true;
-//        ui->pushButtonYes->setChecked(true);
-//    }else {
-//        timer_yes->stop();
-//        head.move_v(50);
-//        ui->pushButtonYes->setChecked(false);
-//        on = false;
-//    }
+    QByteArray data;
+    QByteArray package;
+
+    int currentIndex = ui->comboBoxServoList->currentIndex();
+    int ServoId = ui->comboBoxServoList->itemData(currentIndex).toInt();
+
+    if (!comm->isReady()){
+        error_message->showMessage("Serial port is not open!");
+        return;
+    }
+
+    ServoPos[ServoId] = (uint8_t)dataInt;
+
+    /* Package head data */
+    data += 0x01;
+    data += (uint8_t)ServoId;
+    data += ServoPos[ServoId];
+
+    package = comm->make_pgk(data);
+
+    /* Send data */
+    comm->send_data(package, 6);
+
 }
  
 
