@@ -33,7 +33,7 @@ char saida_anterior = '0';
 int valor_anterior = 0;
 int valor = 0;
 
-// SEI LA
+
 WiFiClient espClient;             // Cria o objeto espClient
 PubSubClient MQTT(espClient);     // Instancia o Cliente MQTT passando o objeto espClient
 
@@ -47,9 +47,9 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length);
 void VerificaConexoesWiFIEMQTT(void);
 void InitOutput(void);
 
+// INICIALIZACAO
 void setup(){
   
-    //inicializações:
     pinMode(A0, INPUT);
     InitOutput();
     initSerial();
@@ -116,7 +116,7 @@ void reconnectMQTT(){ // Reconecta-se ao broker MQTT
 
 void reconectWiFi() // Reconecta-se ao WiFi
 {
-    //se já está conectado a rede WI-FI, nada é feito. 
+    //Caso já conectado a rede WI-FI, nada é feito. 
     //Caso contrário, são efetuadas tentativas de conexão
     if (WiFi.status() == WL_CONNECTED)
         return;
@@ -147,9 +147,7 @@ void VerificaConexoesWiFIEMQTT(void){ // Verifica o estado das conexões WiFI e 
 
 void mqtt_callback(char* topic, byte* payload, unsigned int length){ // Função de callback | Chamada toda vez que uma informação chegar
 
-    digitalWrite(D0, LOW);
     MQTT.publish( TOPICO_PUBLISH, "retorno" );
-    digitalWrite(D0, HIGH);
     Serial.println("Enviado retorno!");
     
 }
