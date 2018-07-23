@@ -86,12 +86,29 @@ void user_init(void)
 
     printf("SDK version:%s\n", sdk_system_get_sdk_version());
 
+    /* Teste 
     pins[0] = 16;
     pins[1] = 5;
     pins[2] = 4;
     pins[3] = 0;
     pins[4] = 2;
-    pins[5] = 14;
+    pins[5] = 14;*/
+    
+    /* Placa da Ana/Felipe
+    pins[0] = 15;
+    pins[1] = 16;
+    pins[2] = 2;
+    pins[3] = 0;
+    pins[4] = 4;
+    pins[5] = 5; */
+    
+    
+    pins[0] = 12;
+    pins[1] = 13;
+    pins[2] = 14;
+    pins[3] = 0;
+    pins[4] = 4;
+    pins[5] = 5;
     
     pwm_init(6, pins);
 
